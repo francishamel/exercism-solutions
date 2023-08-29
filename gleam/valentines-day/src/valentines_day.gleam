@@ -28,21 +28,12 @@ pub fn rate_activity(activity: Activity) -> Approval {
   case activity {
     BoardGame -> No
     Chill -> No
-    Movie(m) ->
-      case m {
-        Romance -> Yes
-        _ -> No
-      }
-    Restaurant(r) ->
-      case r {
-        Korean -> Yes
-        Turkish -> Maybe
-      }
-    Walk(km) ->
-      case km {
-        i if i > 11 -> Yes
-        i if i > 6 -> Maybe
-        _ -> No
-      }
+    Movie(Romance) -> Yes
+    Movie(_) -> No
+    Restaurant(Korean) -> Yes
+    Restaurant(Turkish) -> Maybe
+    Walk(km) if km > 11 -> Yes
+    Walk(km) if km > 6 -> Maybe
+    Walk(_) -> No
   }
 }
