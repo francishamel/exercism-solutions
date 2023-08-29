@@ -22,11 +22,16 @@
         devenv.shells.default = {
           name = "exercism-solutions";
 
-          languages.gleam.enable = true;
+          languages = {
+            erlang.enable = true;
+            gleam.enable = true;
+          };
 
           packages = with pkgs; [
+            exercism
             nil
             nixpkgs-fmt
+            rebar3
           ];
         };
       };
