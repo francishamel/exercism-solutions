@@ -6,14 +6,20 @@ pub type Player {
 }
 
 pub fn introduce(player: Player) -> String {
-  option.unwrap(player.name, "Mighty Magician")
+  option.unwrap(player.name, "Mighty")
+  case player.name {
+    Some(name) -> name
+    None -> "Mighty Magician"
+  }
 }
 
 pub fn revive(player: Player) -> Option(Player) {
-  case player {
-    Player(health: h, level: l, ..) if h == 0 && l >= 10 ->
-      Some(Player(..player, health: 100, mana: Some(100)))
-    Player(health: h, ..) if h == 0 -> Some(Player(..player, health: 100))
+  case player.health == 0 {
+    True ->
+      case player.level >= 10 {
+        True -> Some(Player(..player, health: 100, mana: Some(100)))
+        False -> Some(Player(..player, health: 100))
+      }
     _ -> None
   }
 }
@@ -24,7 +30,7 @@ pub fn cast_spell(player: Player, cost: Int) -> #(Player, Int) {
       Player(..player, mana: Some(mana - cost)),
       cost * 2,
     )
+    Some(_mana) -> #(player, 0)
     None -> #(Player(..player, health: int.max(player.health - cost, 0)), 0)
-    _ -> #(player, 0)
   }
 }
