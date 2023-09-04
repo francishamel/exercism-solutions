@@ -35,18 +35,18 @@ pub fn encode(dna: List(Nucleotide)) -> BitString {
 }
 
 pub fn decode(dna: BitString) -> Result(List(Nucleotide), Nil) {
-  do_decode(dna, Ok([]))
+  do_decode(dna, [])
 }
 
 fn do_decode(
   dna: BitString,
-  acc: Result(List(Nucleotide), Nil),
+  acc: List(Nucleotide),
 ) -> Result(List(Nucleotide), Nil) {
   case dna, acc {
-    <<>>, Ok(acc) -> Ok(list.reverse(acc))
-    <<code:2, rest:bit_string>>, Ok(acc) ->
+    <<>>, acc -> Ok(list.reverse(acc))
+    <<code:2, rest:bit_string>>, acc ->
       case decode_nucleotide(code) {
-        Ok(nucleotide) -> do_decode(rest, Ok([nucleotide, ..acc]))
+        Ok(nucleotide) -> do_decode(rest, [nucleotide, ..acc])
         Error(_) -> Error(Nil)
       }
     _, _ -> Error(Nil)
