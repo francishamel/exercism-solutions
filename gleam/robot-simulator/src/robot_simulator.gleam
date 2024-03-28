@@ -41,7 +41,7 @@ fn do_move(
     [] -> create(direction, position)
     ["A", ..rest] -> do_move(direction, advance(position, direction), rest)
     ["L", ..rest] -> do_move(turn(AntiClockwise, direction), position, rest)
-    ["R", ..rest] -> do_move(turn(Clockwise, direction), position, rest)
+    [_, ..rest] -> do_move(turn(Clockwise, direction), position, rest)
   }
 }
 
