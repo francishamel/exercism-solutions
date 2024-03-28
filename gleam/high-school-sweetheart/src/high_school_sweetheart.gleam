@@ -16,6 +16,7 @@ pub fn initial(name: String) {
 pub fn initials(full_name: String) {
   case string.split(full_name, " ") {
     [first_name, last_name] -> initial(first_name) <> " " <> initial(last_name)
+    _ -> panic("full name is not well formatted")
   }
 }
 
