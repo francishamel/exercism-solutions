@@ -1,4 +1,4 @@
-import gleam/queue.{Queue}
+import gleam/queue.{type Queue}
 import gleam/string
 
 pub fn is_paired(value: String) -> Bool {
