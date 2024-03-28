@@ -24,5 +24,6 @@ fn do_convert(in: Int, symbols: List(#(String, Int)), out: String) -> String {
     in, [#(symbol, value), ..rest] if in >= value ->
       do_convert(in - value, [#(symbol, value), ..rest], out <> symbol)
     in, [_, ..rest] -> do_convert(in, rest, out)
+    _, [] -> panic("impossible state")
   }
 }
