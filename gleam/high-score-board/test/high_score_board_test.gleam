@@ -1,7 +1,7 @@
-import high_score_board
-import exercism/test_runner
 import exercism/should
-import gleam/map
+import exercism/test_runner
+import gleam/dict
+import high_score_board
 
 pub fn main() {
   test_runner.main()
@@ -9,33 +9,34 @@ pub fn main() {
 
 pub fn create_score_board_test() {
   high_score_board.create_score_board()
-  |> should.equal(map.from_list([#("The Best Ever", 1_000_000)]))
+  |> should.equal(dict.from_list([#("The Best Ever", 1_000_000)]))
 }
 
 pub fn add_player_board_test() {
   [#("Amil Pastorius", 99_373), #("Min-seo Shin", 0)]
-  |> map.from_list
+  |> dict.from_list
   |> high_score_board.add_player("Jessie Johnson", 1337)
-  |> should.equal(map.from_list([
-    #("Amil Pastorius", 99_373),
-    #("Min-seo Shin", 0),
-    #("Jessie Johnson", 1337),
-  ]))
+  |> should.equal(
+    dict.from_list([
+      #("Amil Pastorius", 99_373),
+      #("Min-seo Shin", 0),
+      #("Jessie Johnson", 1337),
+    ]),
+  )
 }
 
 pub fn remove_player_test() {
   [#("Amil Pastorius", 99_373), #("Min-seo Shin", 0), #("Jesse Johnson", 1337)]
-  |> map.from_list
+  |> dict.from_list
   |> high_score_board.remove_player("Jesse Johnson")
-  |> should.equal(map.from_list([
-    #("Amil Pastorius", 99_373),
-    #("Min-seo Shin", 0),
-  ]))
+  |> should.equal(
+    dict.from_list([#("Amil Pastorius", 99_373), #("Min-seo Shin", 0)]),
+  )
 }
 
 pub fn remove_player_unknown_test() {
   let board =
-    map.from_list([
+    dict.from_list([
       #("Amil Pastorius", 99_373),
       #("Min-seo Shin", 0),
       #("Jesse Johnson", 1337),
@@ -48,24 +49,28 @@ pub fn remove_player_unknown_test() {
 
 pub fn update_score_test() {
   [#("Amil Pastorius", 99_373), #("Min-seo Shin", 0), #("Jesse Johnson", 1337)]
-  |> map.from_list
+  |> dict.from_list
   |> high_score_board.update_score("Min-seo Shin", 1999)
   |> high_score_board.update_score("Jesse Johnson", 1337)
   |> high_score_board.update_score("Unknown player", 1)
-  |> should.equal(map.from_list([
-    #("Amil Pastorius", 99_373),
-    #("Min-seo Shin", 1999),
-    #("Jesse Johnson", 2674),
-  ]))
+  |> should.equal(
+    dict.from_list([
+      #("Amil Pastorius", 99_373),
+      #("Min-seo Shin", 1999),
+      #("Jesse Johnson", 2674),
+    ]),
+  )
 }
 
 pub fn apply_monday_bonus_test() {
   [#("Amil Pastorius", 345), #("Min-seo Shin", 19), #("Jesse Johnson", 122)]
-  |> map.from_list
+  |> dict.from_list
   |> high_score_board.apply_monday_bonus
-  |> should.equal(map.from_list([
-    #("Amil Pastorius", 445),
-    #("Min-seo Shin", 119),
-    #("Jesse Johnson", 222),
-  ]))
+  |> should.equal(
+    dict.from_list([
+      #("Amil Pastorius", 445),
+      #("Min-seo Shin", 119),
+      #("Jesse Johnson", 222),
+    ]),
+  )
 }
