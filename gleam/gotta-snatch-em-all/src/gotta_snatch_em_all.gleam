@@ -1,6 +1,6 @@
 import gleam/list
 import gleam/result
-import gleam/set.{Set}
+import gleam/set.{type Set}
 import gleam/string
 
 pub fn new_collection(card: String) -> Set(String) {
@@ -20,10 +20,10 @@ pub fn trade_card(
   collection: Set(String),
 ) -> #(Bool, Set(String)) {
   #(
-    set.contains(collection, my_card),
+    set.contains(collection, my_card) && !set.contains(collection, their_card),
     collection
-    |> set.delete(my_card)
-    |> set.insert(their_card),
+      |> set.delete(my_card)
+      |> set.insert(their_card),
   )
 }
 

@@ -1,7 +1,7 @@
-import gotta_snatch_em_all
-import gleam/set
-import exercism/test_runner
 import exercism/should
+import exercism/test_runner
+import gleam/set
+import gotta_snatch_em_all
 
 pub fn main() {
   test_runner.main()
@@ -47,7 +47,7 @@ pub fn trade_card_trading_a_card_i_have_for_a_card_i_have_test() {
     "Gyros",
     set.from_list(["Charilord", "Gyros"]),
   )
-  |> should.equal(#(True, set.from_list(["Gyros"])))
+  |> should.equal(#(False, set.from_list(["Gyros"])))
 }
 
 pub fn trade_card_trading_a_card_i_have_for_a_card_i_dont_have_test() {
@@ -133,25 +133,27 @@ pub fn total_cards_of_three_collections_test() {
 }
 
 pub fn shiny_cards_with_none_test() {
-  gotta_snatch_em_all.shiny_cards(set.from_list([
-    "Blasturtle", "Zumbat", "Hitmonchuck",
-  ]))
+  gotta_snatch_em_all.shiny_cards(
+    set.from_list(["Blasturtle", "Zumbat", "Hitmonchuck"]),
+  )
   |> should.equal(set.new())
 }
 
 pub fn shiny_cards_with_one_test() {
-  gotta_snatch_em_all.shiny_cards(set.from_list([
-    "Blasturtle", "Shiny Phiswan", "Zumbat", "Hitmonchuck",
-  ]))
+  gotta_snatch_em_all.shiny_cards(
+    set.from_list(["Blasturtle", "Shiny Phiswan", "Zumbat", "Hitmonchuck"]),
+  )
   |> should.equal(set.from_list(["Shiny Phiswan"]))
 }
 
 pub fn shiny_cards_with_many_test() {
-  gotta_snatch_em_all.shiny_cards(set.from_list([
-    "Shiny Hitmonchuck", "Blasturtle", "Shiny Shazam", "Shiny Phiswan", "Zumbat",
-    "Hitmonchuck",
-  ]))
-  |> should.equal(set.from_list([
-    "Shiny Hitmonchuck", "Shiny Phiswan", "Shiny Shazam",
-  ]))
+  gotta_snatch_em_all.shiny_cards(
+    set.from_list([
+      "Shiny Hitmonchuck", "Blasturtle", "Shiny Shazam", "Shiny Phiswan",
+      "Zumbat", "Hitmonchuck",
+    ]),
+  )
+  |> should.equal(
+    set.from_list(["Shiny Hitmonchuck", "Shiny Phiswan", "Shiny Shazam"]),
+  )
 }
