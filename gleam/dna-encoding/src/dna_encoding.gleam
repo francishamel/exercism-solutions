@@ -26,25 +26,23 @@ pub fn decode_nucleotide(nucleotide: Int) -> Result(Nucleotide, Nil) {
   }
 }
 
-pub fn encode(dna: List(Nucleotide)) -> BitString {
-  list.fold(
-    dna,
-    <<>>,
-    fn(acc, nucleotide) { <<acc:bit_string, encode_nucleotide(nucleotide):2>> },
-  )
+pub fn encode(dna: List(Nucleotide)) -> BitArray {
+  list.fold(dna, <<>>, fn(acc, nucleotide) {
+    <<acc:bits, encode_nucleotide(nucleotide):2>>
+  })
 }
 
-pub fn decode(dna: BitString) -> Result(List(Nucleotide), Nil) {
+pub fn decode(dna: BitArray) -> Result(List(Nucleotide), Nil) {
   do_decode(dna, [])
 }
 
 fn do_decode(
-  dna: BitString,
+  dna: BitArray,
   acc: List(Nucleotide),
 ) -> Result(List(Nucleotide), Nil) {
   case dna, acc {
     <<>>, acc -> Ok(list.reverse(acc))
-    <<code:2, rest:bit_string>>, acc ->
+    <<code:2, rest:bits>>, acc ->
       case decode_nucleotide(code) {
         Ok(nucleotide) -> do_decode(rest, [nucleotide, ..acc])
         Error(_) -> Error(Nil)
