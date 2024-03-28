@@ -1,4 +1,4 @@
-import gleam/option.{None, Option, Some}
+import gleam/option.{None, type Option, Some}
 import gleam/string
 
 const sentence = "One for you, one for me."
