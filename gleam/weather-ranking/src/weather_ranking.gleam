@@ -1,13 +1,13 @@
 import gleam/float
 import gleam/list
-import gleam/order.{Order}
+import gleam/order.{type Order}
 
 pub type City {
   City(name: String, temperature: Temperature)
 }
 
 pub type Temperature {
-  Celcius(Float)
+  Celsius(Float)
   Fahrenheit(Float)
 }
 
@@ -17,7 +17,7 @@ pub fn fahrenheit_to_celsius(f: Float) -> Float {
 
 fn temperature_to_celcius(t: Temperature) -> Float {
   case t {
-    Celcius(t) -> t
+    Celsius(t) -> t
     Fahrenheit(t) -> fahrenheit_to_celsius(t)
   }
 }
