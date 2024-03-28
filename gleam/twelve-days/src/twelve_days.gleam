@@ -25,7 +25,7 @@ fn number_to_day(number: Int) -> String {
     9 -> "ninth"
     10 -> "tenth"
     11 -> "eleventh"
-    12 -> "twelfth"
+    _ -> "twelfth"
   }
 }
 
@@ -53,7 +53,7 @@ fn day_to_present(day: Int) -> String {
     9 -> "nine Ladies Dancing"
     10 -> "ten Lords-a-Leaping"
     11 -> "eleven Pipers Piping"
-    12 -> "twelve Drummers Drumming"
+    _ -> "twelve Drummers Drumming"
   }
 }
 
