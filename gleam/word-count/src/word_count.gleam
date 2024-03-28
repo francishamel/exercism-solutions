@@ -1,11 +1,11 @@
 import gleam/list
-import gleam/map.{Map}
-import gleam/option.{None, Option, Some}
+import gleam/option.{type Option, Some, None}
 import gleam/string
+import gleam/dict.{type Dict}
 
 const forbidden_chars = [",", "\n", ":", ".", "!", "&", "@", "$", "%", "^", "&"]
 
-pub fn count_words(input: String) -> Map(String, Int) {
+pub fn count_words(input: String) -> Dict(String, Int) {
   forbidden_chars
   |> list.fold(input, fn(acc, x) { string.replace(acc, x, " ") })
   |> string.replace("'", "")
@@ -13,8 +13,8 @@ pub fn count_words(input: String) -> Map(String, Int) {
   |> string.split(on: " ")
   |> list.filter(fn(x) { x != "" })
   |> list.fold(
-    map.new(),
-    fn(map, word) { map.update(map, maybe_fix_word(word), increment) },
+    dict.new(),
+    fn(dict, word) { dict.update(dict, maybe_fix_word(word), increment) },
   )
 }
 
