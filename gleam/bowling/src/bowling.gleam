@@ -2,7 +2,8 @@ import gleam/int
 import gleam/list
 
 pub opaque type Frame {
-  Frame(rolls: List(Int), bonus: List(Int))
+  Frame(rolls: List(Int))
+  LastFrame(rolls: List(Int), bonus: List(Int))
 }
 
 pub type Game {
@@ -24,14 +25,11 @@ pub fn roll(game: Game, knocked_pins: Int) -> Result(Game, Error) {
 }
 
 fn is_game_over(game: Game) -> Bool {
-  case is_last_frame(game), game.frames {
-    // Strike for last frame + 2 bonus rolls
-    True, [Frame(rolls: [10], bonus: [_, _]), ..] -> True
-    // Spare for last frame + 1 bonus roll
-    True, [Frame(rolls: [_, _], bonus: [_]), ..] -> True
-    // Over is no spare for last frame, otherwise it's not since bonus is empty
-    True, [Frame(rolls: [roll1, roll2], bonus: []), ..] -> roll1 + roll2 < 10
-    _, _ -> False
+  case game.frames {
+    [LastFrame(rolls: [10], bonus: [_, _]), ..] -> True
+    [LastFrame(rolls: [_, _], bonus: [_]), ..] -> True
+    [LastFrame(rolls: [roll1, roll2], bonus: []), ..] -> roll1 + roll2 < 10
+    _ -> False
   }
 }
 
@@ -39,39 +37,44 @@ fn is_valid_number_of_knocked_pins(game: Game, knocked_pins: Int) -> Bool {
   case 0 <= knocked_pins && knocked_pins <= 10 {
     False -> False
     True ->
-      case is_last_frame(game), game.frames {
-        // Last frame is a strike + first bonus roll is not a strike
-        True, [Frame(rolls: [10], bonus: [bonus_roll]), ..] if bonus_roll != 10 ->
+      case game.frames {
+        [LastFrame(rolls: [10], bonus: [bonus_roll]), ..] if bonus_roll != 10 ->
           bonus_roll + knocked_pins <= 10
-        // Frame is not a strike
-        _, [Frame(rolls: [roll], bonus: []), ..] if roll != 10 ->
+        [LastFrame(rolls: [roll], bonus: []), ..] if roll != 10 ->
           roll + knocked_pins <= 10
-        _, _ -> True
+        [Frame(rolls: [roll]), ..] if roll != 10 -> roll + knocked_pins <= 10
+        _ -> True
       }
   }
 }
 
 fn do_roll(game: Game, knocked_pins: Int) -> Game {
-  case is_last_frame(game), game.frames {
-    // When last frame is a strike, append to bonus
-    True, [Frame(rolls: [10], bonus: bonus), ..rest] ->
-      Game(frames: [Frame(rolls: [10], bonus: [knocked_pins, ..bonus]), ..rest])
+  case list.length(game.frames), game.frames {
+    10, [LastFrame(rolls: [10], bonus: bonus), ..rest] ->
+      Game(frames: [
+        LastFrame(rolls: [10], bonus: [knocked_pins, ..bonus]),
+        ..rest
+      ])
 
-    // When last frame is a spare, append to bonus
-    True, [Frame(rolls: [roll1, roll2], bonus: []), ..rest] ->
-      Game(frames: [Frame(rolls: [roll1, roll2], bonus: [knocked_pins]), ..rest])
+    10, [LastFrame(rolls: [roll1, roll2], bonus: []), ..rest] ->
+      Game(frames: [
+        LastFrame(rolls: [roll1, roll2], bonus: [knocked_pins]),
+        ..rest
+      ])
 
-    // New frame
-    False, [Frame(rolls: [_, _], bonus: []), ..]
-    | False, [Frame(rolls: [10], bonus: []), ..] ->
-      Game(frames: [Frame(rolls: [knocked_pins], bonus: []), ..game.frames])
+    9, [Frame(rolls: [10]), ..] | 9, [Frame(rolls: [_, _]), ..] ->
+      Game(frames: [LastFrame(rolls: [knocked_pins], bonus: []), ..game.frames])
 
-    // Second roll for current frame
-    _, [Frame(rolls: [roll], bonus: []), ..rest] ->
-      Game(frames: [Frame(rolls: [knocked_pins, roll], bonus: []), ..rest])
+    _, [Frame(rolls: [_, _]), ..] | _, [Frame(rolls: [10]), ..] ->
+      Game(frames: [Frame(rolls: [knocked_pins]), ..game.frames])
 
+    _, [Frame(rolls: [roll]), ..rest] ->
+      Game(frames: [Frame(rolls: [knocked_pins, roll]), ..rest])
+
+    _, [LastFrame(rolls: [roll], bonus: []), ..rest] ->
+      Game(frames: [LastFrame(rolls: [knocked_pins, roll], bonus: []), ..rest])
     // 1st roll of the game
-    False, [] -> Game(frames: [Frame(rolls: [knocked_pins], bonus: [])])
+    0, [] -> Game(frames: [Frame(rolls: [knocked_pins])])
 
     // Impossible state
     _, _ -> panic
@@ -86,7 +89,7 @@ pub fn score(game: Game) -> Result(Int, Error) {
 }
 
 fn do_score(game: Game) -> Int {
-  let assert [Frame(rolls: rolls, bonus: bonus), ..rest] = game.frames
+  let assert [LastFrame(rolls: rolls, bonus: bonus), ..rest] = game.frames
   let next_two_rolls = case rolls, bonus {
     [10], [_, bonus_roll] -> #(10, bonus_roll)
     [roll2, roll1], _ -> #(roll1, roll2)
@@ -119,8 +122,4 @@ fn calculate_frame(acc: AccType, frame: Frame) -> AccType {
       }
     _ -> panic
   }
-}
-
-fn is_last_frame(game: Game) -> Bool {
-  list.length(game.frames) == 10
 }
