@@ -1,11 +1,13 @@
 { pkgs, ... }:
 
 {
-  packages = with pkgs; [
-    exercism
-    nil
-    nixpkgs-fmt
-    rebar3
+  packages = [
+    pkgs.bats
+    pkgs.exercism
+    pkgs.nil
+    pkgs.nixpkgs-fmt
+    pkgs.jq
+    pkgs.rebar3
   ];
 
   languages = {
