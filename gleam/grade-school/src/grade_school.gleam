@@ -1,6 +1,6 @@
 import gleam/int
 import gleam/list
-import gleam/order.{type Order, Eq}
+import gleam/order.{Eq}
 import gleam/string
 
 pub type School {
@@ -17,15 +17,13 @@ pub fn create() -> School {
 
 pub fn roster(school: School) -> List(String) {
   school.students
-  |> list.sort(by: sort_students)
+  |> list.sort(fn(s1, s2) {
+    case int.compare(s1.grade, s2.grade) {
+      Eq -> string.compare(s1.name, s2.name)
+      order -> order
+    }
+  })
   |> list.map(fn(s) { s.name })
-}
-
-fn sort_students(s1: Student, s2: Student) -> Order {
-  case int.compare(s1.grade, s2.grade) {
-    Eq -> string.compare(s1.name, s2.name)
-    order -> order
-  }
 }
 
 pub fn add(
