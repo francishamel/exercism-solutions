@@ -1,12 +1,13 @@
+import gleam/bool
 import gleam/list
 
 pub opaque type Frame {
-  NotLast(state: NotLastState)
+  BeforeLast(state: BeforeLastState)
   Last(state: LastState)
   Pending(state: PendingState)
 }
 
-type NotLastState {
+type BeforeLastState {
   Open(roll1: Int, roll2: Int)
   Spare(roll1: Int, roll2: Int)
   Strike
@@ -19,7 +20,7 @@ type LastState {
 }
 
 type PendingState {
-  PendingNotLast(roll1: Int)
+  PendingBeforeLast(roll1: Int)
   PendingLast(roll1: Int)
   PendingLastSpare(roll1: Int, roll2: Int)
   PendingLastStrike
@@ -37,169 +38,101 @@ pub type Error {
 }
 
 pub fn roll(game: Game, knocked_pins: Int) -> Result(Game, Error) {
-  case is_game_over(game), is_valid_knocked_pins(game, knocked_pins) {
-    True, _ -> Error(GameComplete)
-    False, False -> Error(InvalidPinCount)
-    False, True -> Ok(do_roll(game, knocked_pins))
-  }
-}
+  use <- bool.guard(
+    is_invalid_knocked_pins(game, knocked_pins),
+    Error(InvalidPinCount),
+  )
 
-fn do_roll(game: Game, knocked_pins: Int) -> Game {
   case game.frames {
-    // First roll of the game
-    [] ->
-      case knocked_pins == 10 {
-        True -> Game(frames: [NotLast(state: Strike)])
-
-        False ->
-          Game(frames: [Pending(state: PendingNotLast(roll1: knocked_pins))])
-      }
-
-    // First roll of frame
-    [NotLast(state: _), ..] as rest ->
-      case list.length(rest), knocked_pins == 10 {
-        9, True -> Game(frames: [Pending(state: PendingLastStrike), ..rest])
-
-        9, False ->
-          Game(frames: [
-            Pending(state: PendingLast(roll1: knocked_pins)),
-            ..rest
-          ])
-
-        _, True -> Game(frames: [NotLast(state: Strike), ..rest])
-
-        _, False ->
-          Game(frames: [
-            Pending(state: PendingNotLast(roll1: knocked_pins)),
-            ..rest
-          ])
-      }
-
-    // Second roll of frame
-    [Pending(state: PendingNotLast(roll1: roll1)), ..rest] ->
-      case roll1 + knocked_pins == 10 {
-        True ->
-          Game(frames: [
-            NotLast(state: Spare(roll1: roll1, roll2: knocked_pins)),
-            ..rest
-          ])
-
-        False ->
-          Game(frames: [
-            NotLast(state: Open(roll1: roll1, roll2: knocked_pins)),
-            ..rest
-          ])
-      }
-
-    // Second roll of last frame
-    [Pending(state: PendingLast(roll1: roll1)), ..rest] ->
-      case roll1 + knocked_pins == 10 {
-        True ->
-          Game(frames: [
-            Pending(state: PendingLastSpare(roll1: roll1, roll2: knocked_pins)),
-            ..rest
-          ])
-        False ->
-          Game(frames: [
-            Last(state: LastOpen(roll1: roll1, roll2: knocked_pins)),
-            ..rest
-          ])
-      }
-
-    // Bonus roll after last spare
-    [Pending(state: PendingLastSpare(roll1: roll1, roll2: roll2)), ..rest] ->
-      Game(frames: [
-        Last(state: LastSpare(roll1: roll1, roll2: roll2, bonus: knocked_pins)),
-        ..rest
-      ])
-
-    // First bonus of last strike
-    [Pending(state: PendingLastStrike), ..rest] ->
-      Game(frames: [
-        Pending(state: PendingLastStrike2(bonus1: knocked_pins)),
-        ..rest
-      ])
-
-    // Second bonus of last strike
-    [Pending(state: PendingLastStrike2(bonus1: bonus1)), ..rest] ->
-      Game(frames: [
-        Last(state: LastStrike(bonus1: bonus1, bonus2: knocked_pins)),
-        ..rest
-      ])
-
-    // This function should never be called on a finished game
-    [Last(state: _), ..] -> panic
+    [Last(..), ..] -> Error(GameComplete)
+    [] | [BeforeLast(..), ..] ->
+      Ok(Game([new_frame(game.frames, knocked_pins), ..game.frames]))
+    [Pending(state), ..rest] ->
+      Ok(Game([update_pending_frame(state, knocked_pins), ..rest]))
   }
 }
 
-fn is_game_over(game: Game) -> Bool {
-  case game.frames {
-    [Last(state: _), ..] -> True
-    _ -> False
+fn new_frame(rest: List(Frame), knocked_pins: Int) -> Frame {
+  case list.length(rest), knocked_pins == 10 {
+    9, True -> Pending(PendingLastStrike)
+    9, False -> Pending(PendingLast(knocked_pins))
+    _, True -> BeforeLast(Strike)
+    _, False -> Pending(PendingBeforeLast(knocked_pins))
   }
 }
 
-fn is_valid_knocked_pins(game: Game, knocked_pins: Int) -> Bool {
+fn update_pending_frame(state: PendingState, knocked_pins: Int) -> Frame {
+  case state {
+    PendingBeforeLast(roll1) ->
+      case roll1 + knocked_pins == 10 {
+        True -> BeforeLast(Spare(roll1, knocked_pins))
+        False -> BeforeLast(Open(roll1, knocked_pins))
+      }
+
+    PendingLast(roll1) ->
+      case roll1 + knocked_pins == 10 {
+        True -> Pending(PendingLastSpare(roll1, knocked_pins))
+        False -> Last(LastOpen(roll1, knocked_pins))
+      }
+
+    PendingLastSpare(roll1, roll2) ->
+      Last(LastSpare(roll1, roll2, knocked_pins))
+
+    PendingLastStrike -> Pending(PendingLastStrike2(knocked_pins))
+
+    PendingLastStrike2(bonus1) -> Last(LastStrike(bonus1, knocked_pins))
+  }
+}
+
+fn is_invalid_knocked_pins(game: Game, knocked_pins: Int) -> Bool {
   case 0 <= knocked_pins && knocked_pins <= 10 {
-    False -> False
+    False -> True
     True ->
       case game.frames {
-        [Pending(state: PendingNotLast(roll1: roll)), ..]
-          | [Pending(state: PendingLast(roll1: roll)), ..]
-          | [Pending(state: PendingLastStrike2(bonus1: roll)), ..]
+        [Pending(PendingBeforeLast(roll)), ..]
+          | [Pending(PendingLast(roll)), ..]
+          | [Pending(PendingLastStrike2(roll)), ..]
           if roll != 10
-        -> roll + knocked_pins <= 10
-        _ -> True
+        -> roll + knocked_pins > 10
+        _ -> False
       }
   }
 }
 
 pub fn score(game: Game) -> Result(Int, Error) {
-  case is_game_over(game) {
-    False -> Error(GameNotComplete)
-    True -> Ok(do_score(game))
+  case game.frames {
+    [Last(..), ..] -> Ok(do_score(game.frames, 0, 0, 0))
+    _ -> Error(GameNotComplete)
   }
 }
 
-type Acc {
-  Acc(score: Int, next_two_rolls: #(Int, Int))
-}
+fn do_score(
+  frames: List(Frame),
+  next_roll1: Int,
+  next_roll2: Int,
+  score: Int,
+) -> Int {
+  case frames {
+    [] -> score
+    [frame, ..rest] ->
+      case frame {
+        Last(LastStrike(bonus1, bonus2)) ->
+          do_score(rest, 10, bonus1, score + 10 + bonus1 + bonus2)
 
-fn do_score(game: Game) -> Int {
-  list.fold(
-    game.frames,
-    Acc(score: 0, next_two_rolls: #(0, 0)),
-    score_for_frame,
-  ).score
-}
+        Last(LastSpare(roll1, roll2, bonus)) ->
+          do_score(rest, roll1, roll2, score + roll1 + roll2 + bonus)
 
-fn score_for_frame(acc: Acc, frame: Frame) -> Acc {
-  case frame {
-    Last(state: LastOpen(roll1: roll1, roll2: roll2)) ->
-      Acc(score: roll1 + roll2, next_two_rolls: #(roll1, roll2))
+        BeforeLast(Open(roll1, roll2)) | Last(LastOpen(roll1, roll2)) ->
+          do_score(rest, roll1, roll2, score + roll1 + roll2)
 
-    Last(state: LastSpare(roll1: roll1, roll2: roll2, bonus: bonus)) ->
-      Acc(score: roll1 + roll2 + bonus, next_two_rolls: #(roll1, roll2))
+        BeforeLast(Spare(roll1, roll2)) ->
+          do_score(rest, roll1, roll2, score + roll1 + roll2 + next_roll1)
 
-    Last(state: LastStrike(bonus1: bonus1, bonus2: bonus2)) ->
-      Acc(score: 10 + bonus1 + bonus2, next_two_rolls: #(10, bonus1))
+        BeforeLast(Strike) ->
+          do_score(rest, 10, next_roll1, score + 10 + next_roll1 + next_roll2)
 
-    NotLast(state: Open(roll1: roll1, roll2: roll2)) ->
-      Acc(score: acc.score + roll1 + roll2, next_two_rolls: #(roll1, roll2))
-
-    NotLast(state: Spare(roll1: roll1, roll2: roll2)) ->
-      Acc(score: acc.score + 10 + acc.next_two_rolls.0, next_two_rolls: #(
-        roll1,
-        roll2,
-      ))
-
-    NotLast(state: Strike) ->
-      Acc(
-        score: acc.score + 10 + acc.next_two_rolls.0 + acc.next_two_rolls.1,
-        next_two_rolls: #(10, acc.next_two_rolls.0),
-      )
-
-    // This function should never be used on an unfinished game
-    Pending(state: _) -> panic
+        // We should never reach this state since we only calculate scores for terminated games
+        Pending(..) -> panic
+      }
   }
 }
